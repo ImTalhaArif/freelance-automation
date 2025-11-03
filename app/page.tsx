@@ -5,7 +5,7 @@ import StatCard from '../components/StatsCard';
 import StatusRow from '../components/StatusRow';
 import FeedList from '../components/FeedList';
 import QuickActions from '../components/QuickActions';
-import { getMockStats, getMockStatuses, getMockActivities } from '../utils/mock';
+import { getMockStats, getMockStatuses, getMockActivities } from './utils/mock';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
