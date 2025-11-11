@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface ChatPreview {
   id: number;
@@ -9,6 +9,13 @@ interface ChatPreview {
   lastMessage: string;
   time: string;
   unread: boolean;
+}
+
+interface Message {
+  id: number;
+  text: string;
+  sender: "user" | "client";
+  time: string;
 }
 
 const sampleChats: ChatPreview[] = [
@@ -36,18 +43,51 @@ const sampleChats: ChatPreview[] = [
     time: "12:22 PM",
     unread: true,
   },
-  {
-    id: 4,
-    platform: "Fiverr",
-    client: "Alex K.",
-    lastMessage: "Thank you, looks perfect now!",
-    time: "Yesterday",
-    unread: false,
-  },
 ];
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<ChatPreview | null>(null);
+  const [messages, setMessages] = useState<Record<number, Message[]>>({});
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to latest message when chat updates
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, selectedChat]);
+
+  const handleSend = () => {
+    if (!input.trim() || !selectedChat) return;
+
+    const newMsg: Message = {
+      id: Date.now(),
+      text: input,
+      sender: "user",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setMessages((prev) => ({
+      ...prev,
+      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMsg],
+    }));
+
+    setInput("");
+
+    // Mock AI/client reply
+    setTimeout(() => {
+      const reply: Message = {
+        id: Date.now() + 1,
+        text: "Got it! I’ll review and get back to you shortly.",
+        sender: "client",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [selectedChat.id]: [...(prev[selectedChat.id] || []), reply],
+      }));
+    }, 1000);
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-6rem)] bg-gray-50 rounded-xl shadow-inner border">
@@ -97,7 +137,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* Chat Panel */}
       <div className="flex-1 flex flex-col bg-gray-100 rounded-r-xl">
         {!selectedChat ? (
           <div className="flex flex-1 items-center justify-center text-gray-500">
@@ -108,9 +148,7 @@ export default function ChatPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b rounded-tr-xl">
               <div>
-                <h2 className="font-bold text-gray-800">
-                  {selectedChat.client}
-                </h2>
+                <h2 className="font-bold text-gray-800">{selectedChat.client}</h2>
                 <p className="text-sm text-gray-500">{selectedChat.platform}</p>
               </div>
               <span
@@ -128,16 +166,35 @@ export default function ChatPage() {
 
             {/* Messages */}
             <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
-              <div className="max-w-[70%] bg-white shadow-sm p-3 rounded-lg text-gray-800">
-                Hello {selectedChat.client.split(" ")[0]}, thank you for reaching
-                out! How can I assist you with your project today?
-              </div>
-              <div className="max-w-[70%] bg-indigo-600 text-white ml-auto shadow-sm p-3 rounded-lg">
-                Sure! Let’s go over the deliverables once more before finalizing.
-              </div>
-              <div className="max-w-[70%] bg-white shadow-sm p-3 rounded-lg text-gray-800">
-                Sounds perfect! I’ll send the final version shortly.
-              </div>
+              {(messages[selectedChat.id] || [
+                {
+                  id: 0,
+                  text: "Hey there! 👋 Let’s start your project discussion.",
+                  sender: "client",
+                  time: "2:00 PM",
+                },
+              ]).map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`max-w-[75%] p-3 rounded-lg shadow-sm text-sm ${
+                    msg.sender === "user"
+                      ? "ml-auto bg-indigo-600 text-white"
+                      : "bg-white text-gray-800"
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                  <span
+                    className={`block mt-1 text-[10px] ${
+                      msg.sender === "user"
+                        ? "text-indigo-200"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {msg.time}
+                  </span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
@@ -145,9 +202,15 @@ export default function ChatPage() {
               <input
                 type="text"
                 placeholder="Type your message..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
-              <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+              <button
+                onClick={handleSend}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+              >
                 Send
               </button>
             </div>
