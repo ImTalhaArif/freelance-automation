@@ -28,7 +28,7 @@ export default function Header() {
             className="font-extrabold text-lg text-indigo-600 tracking-tight hover:text-indigo-700 transition-colors"
             onClick={() => setOpen(false)}
           >
-            EvoDynamics Portal
+            Automation Portal
           </Link>
 
           {/* Mobile Menu Button */}
