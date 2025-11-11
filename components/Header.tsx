@@ -9,7 +9,7 @@ export default function Header() {
   const pathname = usePathname();
 
   const links: { href: string; label: string }[] = [
-    { href: "/dashboard", label: "Dashboard" },
+    { href: "/", label: "Dashboard" },
     { href: "/accounts", label: "Accounts" },
     { href: "/crm", label: "CRM" },
     { href: "/agents", label: "Agents" },
