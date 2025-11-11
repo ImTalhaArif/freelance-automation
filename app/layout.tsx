@@ -1,6 +1,6 @@
 // app/layout.tsx
 import "./globals.css";
-import Header from "./components/Header";
+import Header from "../components/Header";
 import type { ReactNode } from "react";
 
 export const metadata = {
