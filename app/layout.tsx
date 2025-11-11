@@ -1,30 +1,62 @@
-// app/layout.tsx
+"use client";
+
 import "./globals.css";
-import Sidebar from "../components/Sidebar";
-import Header from "../components/Header";
-import ThemeProvider from "../components/ThemeProvider";
-import React from "react";
+import Link from "next/link";
+import { useState } from "react";
+import { Menu, X } from "lucide-react"; // icons — install lucide-react if not already
 
 export const metadata = {
-  title: "FreelanceAI CRM",
-  description: "Centralized AI-powered freelance automation & CRM",
+  title: "AI Freelance Automation Dashboard",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-        <ThemeProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              <Header />
-              <main className="p-6">
-                {children}
-              </main>
-            </div>
+      <body className="bg-gray-50 text-gray-900">
+        {/* Navbar */}
+        <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+          <div className="flex justify-between items-center px-4 py-3 md:px-8">
+            <Link href="/" className="font-bold text-lg text-indigo-600">
+              EvoDynamics Portal
+            </Link>
+            <button
+              className="md:hidden p-2 border rounded"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <nav className="hidden md:flex space-x-6 text-sm">
+              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/accounts">Accounts</Link>
+              <Link href="/crm">CRM</Link>
+              <Link href="/agents">Agents</Link>
+              <Link href="/automation">Automation</Link>
+            </nav>
           </div>
-        </ThemeProvider>
+        </header>
+
+        {/* Sidebar for mobile */}
+        <aside
+          className={`fixed top-0 left-0 h-full w-56 bg-white border-r shadow-md transform ${
+            open ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-300 md:hidden z-40`}
+        >
+          <div className="p-4 font-bold text-indigo-600 text-lg border-b">
+            EvoDynamics
+          </div>
+          <nav className="flex flex-col p-4 space-y-3 text-sm">
+            <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
+            <Link href="/accounts" onClick={() => setOpen(false)}>Accounts</Link>
+            <Link href="/crm" onClick={() => setOpen(false)}>CRM</Link>
+            <Link href="/agents" onClick={() => setOpen(false)}>Agents</Link>
+            <Link href="/automation" onClick={() => setOpen(false)}>Automation</Link>
+          </nav>
+        </aside>
+
+        {/* Main content */}
+        <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
       </body>
     </html>
   );
