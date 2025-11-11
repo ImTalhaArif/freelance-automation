@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Zap, PlayCircle, PauseCircle } from "lucide-react";
+import {
+  PlusCircle,
+  Zap,
+  PlayCircle,
+  PauseCircle,
+  XCircle,
+} from "lucide-react";
 
 export default function AutomationPage() {
   const [automations, setAutomations] = useState([
@@ -35,10 +41,33 @@ export default function AutomationPage() {
     },
   ]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAutomation, setNewAutomation] = useState({
+    name: "",
+    platform: "Fiverr",
+    description: "",
+    status: true,
+  });
+
   const toggleAutomation = (id: number) => {
     setAutomations((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: !a.status } : a))
     );
+  };
+
+  const handleCreateAutomation = () => {
+    const nextId = automations.length + 1;
+    setAutomations([
+      ...automations,
+      { id: nextId, lastRun: "Never", ...newAutomation },
+    ]);
+    setNewAutomation({
+      name: "",
+      platform: "Fiverr",
+      description: "",
+      status: true,
+    });
+    setIsModalOpen(false);
   };
 
   return (
@@ -49,7 +78,7 @@ export default function AutomationPage() {
           <Zap className="text-indigo-600 w-8 h-8" />
           Automation Center
         </h1>
-        <Button>
+        <Button onClick={() => setIsModalOpen(true)}>
           <PlusCircle className="w-4 h-4" />
           New Automation
         </Button>
@@ -75,7 +104,10 @@ export default function AutomationPage() {
                     </h3>
                     <p className="text-sm text-gray-500">{a.platform}</p>
                   </div>
-                  <Switch checked={a.status} onChange={() => toggleAutomation(a.id)} />
+                  <Switch
+                    checked={a.status}
+                    onChange={() => toggleAutomation(a.id)}
+                  />
                 </div>
                 <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                   {a.description}
@@ -125,10 +157,102 @@ export default function AutomationPage() {
           </ul>
 
           <div className="pt-4">
-            <Button>+ Add New Workflow</Button>
+            <Button onClick={() => setIsModalOpen(true)}>
+              + Add New Workflow
+            </Button>
           </div>
         </div>
       </section>
+
+      {/* ---------------- Modal ---------------- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative"
+          >
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+
+            <h3 className="text-xl font-bold mb-4 text-gray-800">
+              Create New Automation
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  value={newAutomation.name}
+                  onChange={(e) =>
+                    setNewAutomation({ ...newAutomation, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Platform
+                </label>
+                <select
+                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  value={newAutomation.platform}
+                  onChange={(e) =>
+                    setNewAutomation({
+                      ...newAutomation,
+                      platform: e.target.value,
+                    })
+                  }
+                >
+                  <option>Fiverr</option>
+                  <option>Upwork</option>
+                  <option>Freelancer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  value={newAutomation.description}
+                  onChange={(e) =>
+                    setNewAutomation({
+                      ...newAutomation,
+                      description: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={newAutomation.status}
+                  onChange={() =>
+                    setNewAutomation({
+                      ...newAutomation,
+                      status: !newAutomation.status,
+                    })
+                  }
+                />
+                <span className="text-sm text-gray-700">Active</span>
+              </div>
+
+              <Button onClick={handleCreateAutomation}>Create Automation</Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -160,9 +284,18 @@ function Switch({
   );
 }
 
-function Button({ children }: { children: React.ReactNode }) {
+function Button({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
-    <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition"
+    >
       {children}
     </button>
   );
