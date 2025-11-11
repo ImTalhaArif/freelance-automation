@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { PlusCircle, Zap, PlayCircle, PauseCircle } from "lucide-react";
 
 export default function AutomationPage() {
@@ -12,7 +10,8 @@ export default function AutomationPage() {
       id: 1,
       name: "Fiverr Auto-Reply Bot",
       platform: "Fiverr",
-      description: "Automatically replies to new Fiverr messages with custom templates.",
+      description:
+        "Automatically replies to new Fiverr messages with custom templates.",
       status: true,
       lastRun: "2 hours ago",
     },
@@ -20,7 +19,8 @@ export default function AutomationPage() {
       id: 2,
       name: "Freelancer Lead Scraper",
       platform: "Freelancer",
-      description: "Scrapes new projects and filters by AI or web development keywords.",
+      description:
+        "Scrapes new projects and filters by AI or web development keywords.",
       status: true,
       lastRun: "10 minutes ago",
     },
@@ -28,7 +28,8 @@ export default function AutomationPage() {
       id: 3,
       name: "Upwork Bid Assistant",
       platform: "Upwork",
-      description: "Drafts and submits proposals with tailored intros using AI.",
+      description:
+        "Drafts and submits proposals with tailored intros using AI.",
       status: false,
       lastRun: "Yesterday",
     },
@@ -48,13 +49,13 @@ export default function AutomationPage() {
           <Zap className="text-indigo-600 w-8 h-8" />
           Automation Center
         </h1>
-        <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+        <Button>
           <PlusCircle className="w-4 h-4" />
           New Automation
         </Button>
       </div>
 
-      {/* Active Automations Section */}
+      {/* Active Automations */}
       <section>
         <h2 className="text-xl font-semibold mb-4 text-gray-700">
           Active Automations
@@ -74,10 +75,7 @@ export default function AutomationPage() {
                     </h3>
                     <p className="text-sm text-gray-500">{a.platform}</p>
                   </div>
-                  <Switch
-                    checked={a.status}
-                    onCheckedChange={() => toggleAutomation(a.id)}
-                  />
+                  <Switch checked={a.status} onChange={() => toggleAutomation(a.id)} />
                 </div>
                 <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                   {a.description}
@@ -127,12 +125,45 @@ export default function AutomationPage() {
           </ul>
 
           <div className="pt-4">
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              + Add New Workflow
-            </Button>
+            <Button>+ Add New Workflow</Button>
           </div>
         </div>
       </section>
     </div>
+  );
+}
+
+/* -----------------------------
+   REUSABLE COMPONENTS BELOW
+----------------------------- */
+
+function Switch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      onClick={onChange}
+      className={`w-10 h-6 flex items-center rounded-full transition-colors duration-300 ${
+        checked ? "bg-indigo-600" : "bg-gray-300"
+      }`}
+    >
+      <span
+        className={`bg-white w-5 h-5 rounded-full shadow transform transition-transform duration-300 ${
+          checked ? "translate-x-5" : "translate-x-0.5"
+        }`}
+      ></span>
+    </button>
+  );
+}
+
+function Button({ children }: { children: React.ReactNode }) {
+  return (
+    <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition">
+      {children}
+    </button>
   );
 }
