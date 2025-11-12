@@ -1,9 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Zap, PauseCircle, PlayCircle, MessageCircle, Trophy } from "lucide-react";
+import {
+  User,
+  Zap,
+  PauseCircle,
+  PlayCircle,
+  MessageCircle,
+  Trophy,
+  Bell,
+} from "lucide-react";
 
+// Automation type
+type Automation = {
+  id: number;
+  name: string;
+  type:
+    | "auto-reply"
+    | "lead-scraper"
+    | "bid-assistant"
+    | "notification"
+    | "reminder";
+  platform: "Fiverr" | "Upwork" | "Freelancer";
+  triggers: string[];
+  actions: string[];
+  reminder?: { title: string; datetime: string; afterTask?: boolean };
+};
+
+// Agent type
 type Agent = {
   id: number;
   name: string;
@@ -12,7 +37,7 @@ type Agent = {
   status: "active" | "idle" | "offline";
   tasksCompleted: number;
   leadsCaptured: number;
-  assignedAutomations: string[];
+  assignedAutomations: Automation[];
 };
 
 export default function AgentsPage() {
@@ -25,7 +50,16 @@ export default function AgentsPage() {
       status: "active",
       tasksCompleted: 12,
       leadsCaptured: 5,
-      assignedAutomations: ["Fiverr Auto-Reply Bot"],
+      assignedAutomations: [
+        {
+          id: 1,
+          name: "Fiverr Auto-Reply Bot",
+          type: "auto-reply",
+          platform: "Fiverr",
+          triggers: ["new message"],
+          actions: ["send auto-reply"],
+        },
+      ],
     },
     {
       id: 2,
@@ -35,32 +69,52 @@ export default function AgentsPage() {
       status: "idle",
       tasksCompleted: 8,
       leadsCaptured: 3,
-      assignedAutomations: ["Upwork Bid Assistant"],
-    },
-    {
-      id: 3,
-      name: "Zara Ali",
-      email: "zara@example.com",
-      platform: "Freelancer",
-      status: "offline",
-      tasksCompleted: 15,
-      leadsCaptured: 7,
-      assignedAutomations: [],
+      assignedAutomations: [
+        {
+          id: 2,
+          name: "Upwork Bid Assistant",
+          type: "bid-assistant",
+          platform: "Upwork",
+          triggers: ["new project matched"],
+          actions: ["draft proposal", "send proposal"],
+        },
+      ],
     },
   ]);
 
   const [filter, setFilter] = useState<"All" | "Fiverr" | "Upwork" | "Freelancer">("All");
 
+  const [showAutomationModal, setShowAutomationModal] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+
+  const [newAutomationName, setNewAutomationName] = useState("");
+  const [newAutomationType, setNewAutomationType] = useState<
+    Automation["type"]
+  >("auto-reply");
+  const [newAutomationPlatform, setNewAutomationPlatform] = useState<
+    Automation["platform"]
+  >("Fiverr");
+  const [newAutomationTriggers, setNewAutomationTriggers] = useState("");
+  const [newAutomationActions, setNewAutomationActions] = useState("");
+  const [newReminderTitle, setNewReminderTitle] = useState("");
+  const [newReminderDateTime, setNewReminderDateTime] = useState("");
+  const [newReminderAfterTask, setNewReminderAfterTask] = useState(false);
+
   const filteredAgents = agents.filter(
     (a) => filter === "All" || a.platform === filter
   );
 
+  // Toggle agent status
   const toggleStatus = (id: number) => {
     setAgents((prev) =>
       prev.map((a) => {
         if (a.id === id) {
           const nextStatus =
-            a.status === "active" ? "idle" : a.status === "idle" ? "offline" : "active";
+            a.status === "active"
+              ? "idle"
+              : a.status === "idle"
+              ? "offline"
+              : "active";
           return { ...a, status: nextStatus };
         }
         return a;
@@ -68,33 +122,78 @@ export default function AgentsPage() {
     );
   };
 
-  const assignAutomation = (id: number) => {
-    const automationName = prompt("Enter automation name to assign:");
-    if (!automationName) return;
+  // Assign new automation
+  const handleAssignAutomation = () => {
+    if (selectedAgentId === null || !newAutomationName) return;
+
+    const newAutomation: Automation = {
+      id: Date.now(),
+      name: newAutomationName,
+      type: newAutomationType,
+      platform: newAutomationPlatform,
+      triggers: newAutomationTriggers.split(",").map((t) => t.trim()),
+      actions: newAutomationActions.split(",").map((a) => a.trim()),
+      reminder:
+        newReminderTitle && newReminderDateTime
+          ? {
+              title: newReminderTitle,
+              datetime: newReminderDateTime,
+              afterTask: newReminderAfterTask,
+            }
+          : undefined,
+    };
+
     setAgents((prev) =>
       prev.map((a) =>
-        a.id === id
-          ? { ...a, assignedAutomations: [...a.assignedAutomations, automationName] }
+        a.id === selectedAgentId
+          ? {
+              ...a,
+              assignedAutomations: [...a.assignedAutomations, newAutomation],
+            }
           : a
       )
     );
+
+    // Reset modal
+    setNewAutomationName("");
+    setNewAutomationType("auto-reply");
+    setNewAutomationPlatform("Fiverr");
+    setNewAutomationTriggers("");
+    setNewAutomationActions("");
+    setNewReminderTitle("");
+    setNewReminderDateTime("");
+    setNewReminderAfterTask(false);
+    setShowAutomationModal(false);
   };
 
-  const sendMessage = (id: number) => {
-    const msg = prompt("Enter message to send to agent:");
-    if (!msg) return alert(`Message sent to agent #${id}: "${msg}"`);
-  };
+  // Handle reminders
+  useEffect(() => {
+    agents.forEach((agent) => {
+      agent.assignedAutomations.forEach((automation) => {
+        if (automation.reminder) {
+          const reminderTime = new Date(automation.reminder.datetime).getTime();
+          const now = Date.now();
+          const timeout = reminderTime - now;
+          if (timeout > 0) {
+            setTimeout(() => {
+              alert(
+                `Reminder for Agent ${agent.name}: ${automation.reminder?.title}`
+              );
+            }, timeout);
+          }
+        }
+      });
+    });
+  }, [agents]);
 
   return (
     <div className="p-6 space-y-10">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-gray-800 flex items-center gap-2">
-          <Zap className="text-indigo-600 w-8 h-8" />
-          Agents Dashboard
+          <Zap className="text-indigo-600 w-8 h-8" /> Agents Dashboard
         </h1>
 
-        {/* Platform Filters */}
         <div className="flex gap-2 flex-wrap">
           {["All", "Fiverr", "Upwork", "Freelancer"].map((plat) => (
             <button
@@ -153,11 +252,22 @@ export default function AgentsPage() {
 
             {/* Assigned Automations */}
             <div className="mt-4 text-sm">
-              <p className="font-medium text-gray-700 mb-1">Automations:</p>
+              <p className="font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <Zap className="w-4 h-4 text-indigo-600" />
+                Automations:
+              </p>
               {agent.assignedAutomations.length ? (
                 <ul className="list-disc pl-5 text-gray-600">
-                  {agent.assignedAutomations.map((a, i) => (
-                    <li key={i}>{a}</li>
+                  {agent.assignedAutomations.map((a) => (
+                    <li key={a.id}>
+                      {a.name}{" "}
+                      {a.reminder && (
+                        <span className="text-xs text-gray-500 ml-1 flex items-center gap-1">
+                          <Bell className="w-3 h-3" />
+                          Reminder: {new Date(a.reminder.datetime).toLocaleString()}
+                        </span>
+                      )}
+                    </li>
                   ))}
                 </ul>
               ) : (
@@ -181,14 +291,21 @@ export default function AgentsPage() {
                   </>
                 )}
               </button>
+
               <button
-                onClick={() => assignAutomation(agent.id)}
+                onClick={() => {
+                  setSelectedAgentId(agent.id);
+                  setShowAutomationModal(true);
+                }}
                 className="flex items-center gap-1 text-sm px-3 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 Assign Automation
               </button>
+
               <button
-                onClick={() => sendMessage(agent.id)}
+                onClick={() =>
+                  alert(`Send message to ${agent.name} (simulate action)`)
+                }
                 className="flex items-center gap-1 text-sm px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700"
               >
                 <MessageCircle className="w-4 h-4" /> Message
@@ -206,6 +323,105 @@ export default function AgentsPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Automation Modal */}
+      {showAutomationModal && selectedAgentId !== null && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-700">Assign Automation</h2>
+
+            <input
+              type="text"
+              placeholder="Automation Name"
+              value={newAutomationName}
+              onChange={(e) => setNewAutomationName(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg"
+            />
+
+            <select
+              value={newAutomationType}
+              onChange={(e) =>
+                setNewAutomationType(e.target.value as Automation["type"])
+              }
+              className="w-full border px-3 py-2 rounded-lg"
+            >
+              <option value="auto-reply">Auto-Reply</option>
+              <option value="lead-scraper">Lead Scraper</option>
+              <option value="bid-assistant">Bid Assistant</option>
+              <option value="notification">Notification</option>
+              <option value="reminder">Reminder</option>
+            </select>
+
+            <select
+              value={newAutomationPlatform}
+              onChange={(e) =>
+                setNewAutomationPlatform(e.target.value as Automation["platform"])
+              }
+              className="w-full border px-3 py-2 rounded-lg"
+            >
+              <option value="Fiverr">Fiverr</option>
+              <option value="Upwork">Upwork</option>
+              <option value="Freelancer">Freelancer</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Triggers (comma separated)"
+              value={newAutomationTriggers}
+              onChange={(e) => setNewAutomationTriggers(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg"
+            />
+
+            <input
+              type="text"
+              placeholder="Actions (comma separated)"
+              value={newAutomationActions}
+              onChange={(e) => setNewAutomationActions(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg"
+            />
+
+            <hr />
+
+            <h3 className="font-medium text-gray-700">Add Reminder (Optional)</h3>
+            <input
+              type="text"
+              placeholder="Reminder Title"
+              value={newReminderTitle}
+              onChange={(e) => setNewReminderTitle(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg"
+            />
+            <input
+              type="datetime-local"
+              value={newReminderDateTime}
+              onChange={(e) => setNewReminderDateTime(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg"
+            />
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={newReminderAfterTask}
+                onChange={(e) => setNewReminderAfterTask(e.target.checked)}
+              />
+              Trigger after task completion
+            </label>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowAutomationModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignAutomation}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Assign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
