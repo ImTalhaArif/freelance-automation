@@ -168,23 +168,26 @@ export default function AgentsPage() {
 
   // Handle reminders
   useEffect(() => {
+  const firedReminders = new Set<number>();
+
+  const interval = setInterval(() => {
+    const now = Date.now();
+
     agents.forEach((agent) => {
       agent.assignedAutomations.forEach((automation) => {
-        if (automation.reminder) {
+        if (automation.reminder && !firedReminders.has(automation.id)) {
           const reminderTime = new Date(automation.reminder.datetime).getTime();
-          const now = Date.now();
-          const timeout = reminderTime - now;
-          if (timeout > 0) {
-            setTimeout(() => {
-              alert(
-                `Reminder for Agent ${agent.name}: ${automation.reminder?.title}`
-              );
-            }, timeout);
+          if (now >= reminderTime) {
+            alert(`Reminder for Agent ${agent.name}: ${automation.reminder.title}`);
+            firedReminders.add(automation.id);
           }
         }
       });
     });
-  }, [agents]);
+  }, 1000); // check every second
+
+  return () => clearInterval(interval);
+}, [agents]);
 
   return (
     <div className="p-6 space-y-10">
